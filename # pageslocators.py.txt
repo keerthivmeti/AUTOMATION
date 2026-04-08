@@ -1,0 +1,88 @@
+# pages/locators.py
+import os
+
+class AutomationPage:
+    def __init__(self, page):
+        self.page = page
+        self.url = "https://www.automationanywhere.com/products/enterprise/community-edition"
+
+    def login(self, user, pw):
+        self.page.goto(self.url)
+        # Selectors based on general Automation Anywhere patterns [cite: 6]
+        self.page.fill('input[name="user"]', user)
+        self.page.fill('input[name="password"]', pw)
+        self.page.click('button[type="submit"]')
+
+    def create_message_box_task(self, bot_name):
+        # Use Case 1: Message Box Task [cite: 7, 9]
+        self.page.click('text="Automation"')
+        self.page.click('button:has-text("Create")')
+        self.page.click('text="Task Bot"')
+        self.page.fill('input[label="Name*"]', bot_name)
+        self.page.click('button:has-text("Create")')
+        
+        # Add Message Box action [cite: 11]
+        self.page.fill('input[placeholder="Search actions"]', "Message Box")
+        self.page.dblclick('text="Message Box"')
+        
+        # Verify and Save [cite: 12]
+        self.page.wait_for_selector('.right-panel')
+        self.page.click('button:has-text("Save")')
+
+    def create_form_with_upload(self, form_name, file_name):
+        # Use Case 2: Form with Upload [cite: 15, 17, 18]
+        self.page.click('text="Automation"')
+        self.page.click('button:has-text("Create")')
+        self.page.click('text="Form"')
+        self.page.fill('input[label="Name*"]', form_name)
+        self.page.click('button:has-text("Create")')
+
+        # Drag and Drop (Simulated via clicking/adding) [cite: 19]
+        self.page.click('text="Textbox"')
+        self.page.click('text="Select File"')
+
+        # Upload Flow [cite: 21, 22]
+        self.page.fill('input[type="text"]', "Automated Input")
+        file_path = os.path.abspath(file_name)
+        self.page.set_input_files('input[type="file"]', file_path)
+        
+        self.page.click('button:has-text("Save")')
+# test_assignment.py
+import pytest
+from playwright.sync_api import sync_playwright
+from pages.locators import AutomationPage
+
+def test_automation_anywhere_assignment():
+    with sync_playwright() as p:
+        browser = p.chromium.launch(headless=False)
+        context = browser.new_context()
+        page = context.new_page()
+        aa = AutomationPage(page)
+
+        # REPLACE WITH YOUR ACTUAL REGISTERED CREDENTIALS [cite: 6, 27]
+        USER = "your-username"
+        PASS = "your-password"
+
+        # --- USE CASE 1 & 2 (UI) ---
+        aa.login(USER, PASS)
+        aa.create_message_box_task("MessageBox_Bot_2026")
+        
+        # Ensure you have a 'sample.pdf' in your folder for this [cite: 21]
+        aa.create_form_with_upload("Upload_Form_2026", "sample.pdf")
+
+        # --- USE CASE 3 (API)  ---
+        # Identify your specific API URL/Token from the Network Tab
+        api_url = "https://community.cloud.automationanywhere.digital/v1/learning-instances"
+        headers = {"Authorization": "Bearer YOUR_TOKEN_FROM_NETWORK_TAB"}
+        
+        api_request = page.request.post(
+            api_url,
+            data={"name": "Learning_Instance_01", "description": "API Test"},
+            headers=headers
+        )
+        
+        # Assertions for API [cite: 30]
+        assert api_request.status in [200, 201], f"Failed with {api_request.status}"
+        print(f"API Success: {api_request.json()}")
+
+        browser.close()
